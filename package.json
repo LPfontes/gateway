@@ -1,0 +1,11 @@
+{
+  "name": "ufpb-gateway-unificado",
+  "version": "1.0.0",
+  "description": "Portal Gateway e Login Unificado (SSO) entre SPD, ED e Sistema-ETS",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  }
+}

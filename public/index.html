@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#14213d">
+  <title>Portal Integrado de Gestão Acadêmica & Docente • UFPB</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <!-- Cabeçalho Institucional Unificado -->
+  <header class="gw-header">
+    <div class="gw-header-inner">
+      <div class="gw-brand">
+        <span class="gw-brand-badge">UFPB</span>
+        <div class="gw-brand-titles">
+          <h1 class="gw-brand-title">Portal Integrado de Gestão Docente</h1>
+          <span class="gw-brand-subtitle">Gateway Unificado (SSO) • SPD · ED · Sistema ETS</span>
+        </div>
+      </div>
+
+      <div class="gw-header-actions">
+        <div id="userChip" class="gw-user-chip" hidden>
+          <span class="gw-status-dot" aria-hidden="true"></span>
+          <div class="gw-user-info">
+            <span id="userNameLabel" class="gw-user-name"></span>
+            <span id="userEmailLabel" class="gw-user-sub"></span>
+          </div>
+          <span id="userRoleBadge" class="gw-role-badge"></span>
+          <button type="button" id="btnLogout" class="gw-btn-outline">Sair</button>
+        </div>
+
+        <button type="button" id="btnThemeToggle" class="gw-btn-outline" aria-label="Alternar tema">
+          Modo Escuro
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="gw-main">
+    <!-- TELA 1: LOGIN UNIFICADO (SSO) -->
+    <section id="loginView" class="gw-login-section" aria-labelledby="loginHeading">
+      <div class="gw-login-grid">
+        <div class="gw-hero-panel">
+          <span class="gw-kicker">Autenticação Única • Single Sign-On</span>
+          <h2 id="loginHeading" class="gw-hero-title">
+            Um único acesso para os três sistemas acadêmicos.
+          </h2>
+          <p class="gw-hero-desc">
+            Autentique-se uma vez com seu <strong>E-mail institucional</strong>, <strong>matrícula SIAPE</strong> ou <strong>usuário</strong> para transitar diretamente entre os módulos sem precisar digitar sua senha novamente.
+          </p>
+
+          <div class="gw-mini-systems" aria-label="Sistemas integrados">
+            <div class="gw-mini-card">
+              <span class="gw-mini-sigla">SPD</span>
+              <div>
+                <strong>Sistema de Presença Docente</strong>
+                <p>Reuniões de colegiado, frequência com OCR e justificativas.</p>
+              </div>
+            </div>
+            <div class="gw-mini-card">
+              <span class="gw-mini-sigla">ED</span>
+              <div>
+                <strong>Encargos Docentes</strong>
+                <p>Atribuições de encargos, portarias, pesos e pontuação docente.</p>
+              </div>
+            </div>
+            <div class="gw-mini-card">
+              <span class="gw-mini-sigla">ETS</span>
+              <div>
+                <strong>Sistema ETS / UFPB</strong>
+                <p>Análise de cargas horárias, cursos, ofertas de disciplinas e extratos.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gw-login-card">
+          <div class="gw-login-card-header">
+            <span class="gw-lock-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="11" width="16" height="10" rx="2"/>
+                <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+              </svg>
+            </span>
+            <div>
+              <h3>Login Unificado</h3>
+              <p>Entre com suas credenciais de Administrador ou Docente</p>
+            </div>
+          </div>
+
+          <form id="loginForm" class="gw-login-form" novalidate>
+            <div class="gw-field">
+              <label for="inputIdentificador">E-mail, SIAPE ou Usuário</label>
+              <input
+                type="text"
+                id="inputIdentificador"
+                name="identificador"
+                placeholder="ex: admin@spd.local, 1234567 ou usuario"
+                autocomplete="username"
+                required
+              >
+            </div>
+
+            <div class="gw-field">
+              <label for="inputSenha">Senha</label>
+              <input
+                type="password"
+                id="inputSenha"
+                name="senha"
+                placeholder="Digite sua senha"
+                autocomplete="current-password"
+                required
+              >
+            </div>
+
+            <div class="gw-field">
+              <label for="selectDestinoInicial">Ao entrar, ir para</label>
+              <select id="selectDestinoInicial" name="destino">
+                <option value="hub">Painel Gateway (Escolher sistema)</option>
+                <option value="spd">Abrir direto o SPD (Presença Docente)</option>
+                <option value="ed">Abrir direto o ED (Encargos Docentes)</option>
+                <option value="ets">Abrir direto o Sistema ETS (Cargas Horárias)</option>
+              </select>
+            </div>
+
+            <div id="loginError" class="gw-error-box" role="alert" hidden></div>
+
+            <button type="submit" id="btnSubmitLogin" class="gw-btn-primary">
+              Entrar com Login Unificado
+            </button>
+          </form>
+
+          <div class="gw-login-footer">
+            <span>Sessão criptografada via token SSO compartilhado (HMAC-SHA256)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TELA 2: HUB GATEWAY DE SISTEMAS -->
+    <section id="hubView" class="gw-hub-section" aria-labelledby="hubHeading" hidden>
+      <div class="gw-hub-toolbar">
+        <div>
+          <span class="gw-kicker">Sessão SSO Ativa</span>
+          <h2 id="hubHeading" class="gw-hub-title">Selecione o sistema que deseja acessar</h2>
+          <p class="gw-hub-subtitle">
+            O seu token de autenticação única será enviado automaticamente ao abrir qualquer um dos sistemas abaixo.
+          </p>
+        </div>
+        <div class="gw-hub-actions">
+          <button type="button" id="btnRefreshStatus" class="gw-btn-secondary">
+            Atualizar Status dos Servidores
+          </button>
+        </div>
+      </div>
+
+      <div id="systemsGrid" class="gw-systems-grid" aria-live="polite">
+        <!-- Cards renderizados dinamicamente por app.js -->
+      </div>
+
+      <section class="gw-sso-panel" aria-labelledby="ssoInfoHeading">
+        <div class="gw-sso-panel-header">
+          <h3 id="ssoInfoHeading">Resumo da Identidade Unificada (SSO)</h3>
+          <span id="ssoOriginBadge" class="gw-origin-badge">Autenticado</span>
+        </div>
+        <div class="gw-sso-meta-grid">
+          <div class="gw-meta-item">
+            <span class="gw-meta-label">Nome</span>
+            <strong id="metaNome">—</strong>
+          </div>
+          <div class="gw-meta-item">
+            <span class="gw-meta-label">E-mail (SPD / ETS)</span>
+            <strong id="metaEmail">—</strong>
+          </div>
+          <div class="gw-meta-item">
+            <span class="gw-meta-label">Usuário / SIAPE (SPD / ED)</span>
+            <strong id="metaUsuario">—</strong>
+          </div>
+          <div class="gw-meta-item">
+            <span class="gw-meta-label">Perfil de Acesso</span>
+            <strong id="metaPerfil">—</strong>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="gw-footer">
+    <div class="gw-footer-inner">
+      <span>UFPB • Portal Gateway Integrado (SPD · ED · Sistema ETS)</span>
+      <span>Single Sign-On (SSO) Unificado</span>
+    </div>
+  </footer>
+</body>
+</html>

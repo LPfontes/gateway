@@ -1,0 +1,173 @@
+# =============================================================================
+# DOCKER COMPOSE UNIFICADO — PORTAL GATEWAY + 3 SISTEMAS INDEPENDENTES
+#   1. Gateway SSO  (http://localhost:4000)
+#   2. SPD          (http://localhost:3000) + PostgreSQL independente
+#   3. ED           (http://localhost:3001) + SQLite independente
+#   4. Sistema-ETS  (http://localhost:8000) + MariaDB independente
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # 0. PORTAL GATEWAY & SINGLE SIGN-ON (SSO)
+  # ---------------------------------------------------------------------------
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ufpb_gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-4000}:4000"
+    environment:
+      GATEWAY_PORT: 4000
+      GATEWAY_HOST: 0.0.0.0
+      SSO_SECRET: ${SSO_SECRET:-dda44fc86d93b0f196a4ad1612a17e9cfd451e3f29f9e25ad3bec3fab02030df82765460ededd62e84ff65d54f179d94}
+      # URLs internas na rede Docker para healthchecks e autenticação entre containers
+      SPD_INTERNAL_URL: http://spd-app:3000
+      ED_INTERNAL_URL: http://ed-app:3000
+      ETS_INTERNAL_URL: http://ets-app:8000
+      # URLs públicas no navegador do usuário para redirecionamento SSO
+      SPD_PUBLIC_URL: ${SPD_PUBLIC_URL:-http://localhost:3000}
+      ED_PUBLIC_URL: ${ED_PUBLIC_URL:-http://localhost:3001}
+      ETS_PUBLIC_URL: ${ETS_PUBLIC_URL:-http://localhost:8000}
+      GATEWAY_ADMIN_NAME: ${ADMIN_NAME:-Administrador do Sistema}
+      GATEWAY_ADMIN_USER: ${ADMIN_EMAIL:-admin@spd.local}
+      GATEWAY_ADMIN_SIAPE: ${ADMIN_SIAPE:-admin}
+      GATEWAY_ADMIN_PASS: ${ADMIN_PASSWORD:-admin123}
+    networks:
+      - ufpb_sso_net
+
+  # ---------------------------------------------------------------------------
+  # 1. SISTEMA SPD (Sistema de Presença Docente) + Banco PostgreSQL Próprio
+  # ---------------------------------------------------------------------------
+  spd-db:
+    image: postgres:16-alpine
+    container_name: ufpb_spd_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${SPD_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${SPD_DB_PASSWORD:-postgrespassword}
+      POSTGRES_DB: ${SPD_DB_NAME:-spd_db}
+    volumes:
+      - spd_pgdata:/var/lib/postgresql/data
+      - ./SPD/backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SPD_DB_USER:-postgres} -d ${SPD_DB_NAME:-spd_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ufpb_sso_net
+
+  spd-app:
+    build:
+      context: ./SPD
+      dockerfile: Dockerfile
+    container_name: ufpb_spd_app
+    restart: unless-stopped
+    depends_on:
+      spd-db:
+        condition: service_healthy
+    ports:
+      - "${SPD_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://${SPD_DB_USER:-postgres}:${SPD_DB_PASSWORD:-postgrespassword}@spd-db:5432/${SPD_DB_NAME:-spd_db}
+      JWT_SECRET: ${SSO_SECRET:-dda44fc86d93b0f196a4ad1612a17e9cfd451e3f29f9e25ad3bec3fab02030df82765460ededd62e84ff65d54f179d94}
+      SSO_SECRET: ${SSO_SECRET:-dda44fc86d93b0f196a4ad1612a17e9cfd451e3f29f9e25ad3bec3fab02030df82765460ededd62e84ff65d54f179d94}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador do Sistema}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@spd.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_SYNC_ON_START: "false"
+    volumes:
+      - spd_uploads:/app/backend/uploads
+    networks:
+      - ufpb_sso_net
+
+  # ---------------------------------------------------------------------------
+  # 2. SISTEMA ED (Encargos Docentes) + Banco SQLite Próprio
+  # ---------------------------------------------------------------------------
+  ed-app:
+    build:
+      context: ./ed
+      dockerfile: Dockerfile
+    container_name: ufpb_ed_app
+    restart: unless-stopped
+    ports:
+      - "${ED_PORT:-3001}:3000"
+    environment:
+      NODE_ENV: production
+      ED_PORTA: 3000
+      ED_HOST: 0.0.0.0
+      ED_DADOS: /app/data
+      SSO_SECRET: ${SSO_SECRET:-dda44fc86d93b0f196a4ad1612a17e9cfd451e3f29f9e25ad3bec3fab02030df82765460ededd62e84ff65d54f179d94}
+    volumes:
+      - ed_data:/app/data
+    networks:
+      - ufpb_sso_net
+
+  # ---------------------------------------------------------------------------
+  # 3. SISTEMA-ETS (Análise de Cargas Horárias - Laravel) + MariaDB Próprio
+  # ---------------------------------------------------------------------------
+  ets-db:
+    image: mariadb:10.11
+    container_name: ufpb_ets_mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${ETS_DB_ROOT_PASSWORD:-etsrootpassword}
+      MARIADB_DATABASE: ${ETS_DB_NAME:-sistema_ets}
+      MARIADB_USER: ${ETS_DB_USER:-sistema_ets}
+      MARIADB_PASSWORD: ${ETS_DB_PASSWORD:-etspassword}
+    volumes:
+      - ets_dbdata:/var/lib/mysql
+      - ./Sistema-ets/Banco_sistema_ets.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - ufpb_sso_net
+
+  ets-app:
+    build:
+      context: ./Sistema-ets
+      dockerfile: Dockerfile
+    container_name: ufpb_ets_app
+    restart: unless-stopped
+    depends_on:
+      ets-db:
+        condition: service_healthy
+    ports:
+      - "${ETS_PORT:-8000}:8000"
+    environment:
+      APP_NAME: "Sistema ETS/UFPB"
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_URL: ${ETS_PUBLIC_URL:-http://localhost:8000}
+      GATEWAY_URL: ${GATEWAY_PUBLIC_URL:-http://localhost:4000}
+      SSO_SECRET: ${SSO_SECRET:-dda44fc86d93b0f196a4ad1612a17e9cfd451e3f29f9e25ad3bec3fab02030df82765460ededd62e84ff65d54f179d94}
+      DB_CONNECTION: mysql
+      DB_HOST: ets-db
+      DB_PORT: 3306
+      DB_DATABASE: ${ETS_DB_NAME:-sistema_ets}
+      DB_USERNAME: ${ETS_DB_USER:-sistema_ets}
+      DB_PASSWORD: ${ETS_DB_PASSWORD:-etspassword}
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+    volumes:
+      - ets_storage:/var/www/html/storage
+    networks:
+      - ufpb_sso_net
+
+networks:
+  ufpb_sso_net:
+    driver: bridge
+
+volumes:
+  spd_pgdata:
+  spd_uploads:
+  ed_data:
+  ets_dbdata:
+  ets_storage:

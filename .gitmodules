@@ -1,0 +1,9 @@
+[submodule "SPD"]
+	path = SPD
+	url = https://github.com/LPfontes/SPD.git
+[submodule "ed"]
+	path = ed
+	url = https://github.com/LPfontes/ed.git
+[submodule "Sistema-ets"]
+	path = Sistema-ets
+	url = https://github.com/LPfontes/Sistema-ets.git
