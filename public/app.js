@@ -112,11 +112,11 @@ function atualizarInterfaceAutenticada() {
     byId('userEmailLabel').textContent = u.email || u.usuario || '';
     byId('userRoleBadge').textContent = isAdmin ? 'Administrador' : 'Docente / Visitante';
 
-    byId('metaNome').textContent = u.nome || '—';
-    byId('metaEmail').textContent = u.email || '—';
-    byId('metaUsuario').textContent = u.siape || u.usuario || '—';
-    byId('metaPerfil').textContent = isAdmin ? 'Administrador (Acesso Total)' : 'Docente / Visitante (Consulta)';
-    byId('ssoOriginBadge').textContent = `Credencial validada (${state.origem || 'SSO'})`;
+    if (byId('metaNome')) byId('metaNome').textContent = u.nome || '—';
+    if (byId('metaEmail')) byId('metaEmail').textContent = u.email || '—';
+    if (byId('metaUsuario')) byId('metaUsuario').textContent = u.siape || u.usuario || '—';
+    if (byId('metaPerfil')) byId('metaPerfil').textContent = isAdmin ? 'Administrador (Acesso Total)' : 'Docente / Visitante (Consulta)';
+    if (byId('ssoOriginBadge')) byId('ssoOriginBadge').textContent = `Credencial validada (${state.origem || 'SSO'})`;
 
     renderizarSistemas();
   }
