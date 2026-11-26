@@ -86,7 +86,6 @@ function renderizarSistemas() {
             <h3 class="gw-card-title">${escapeHtml(sys.nome)}</h3>
             <span class="gw-card-subtitle">${escapeHtml(sys.subtitulo)}</span>
             <p class="gw-card-desc">${escapeHtml(sys.descricao)}</p>
-            <div class="gw-card-tags">${tagsHtml}</div>
           </div>
 
           <div class="gw-card-actions">
