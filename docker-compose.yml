@@ -78,8 +78,9 @@ services:
       SSO_SECRET: ${SSO_SECRET:-dda44fc86d93b0f196a4ad1612a17e9cfd451e3f29f9e25ad3bec3fab02030df82765460ededd62e84ff65d54f179d94}
       ADMIN_NAME: ${ADMIN_NAME:-Administrador do Sistema}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@spd.local}
+      ADMIN_USER: ${ADMIN_SIAPE:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
-      ADMIN_SYNC_ON_START: "false"
+      ADMIN_SYNC_ON_START: "true"
     volumes:
       - spd_uploads:/app/backend/uploads
     networks:
@@ -102,6 +103,10 @@ services:
       ED_HOST: 0.0.0.0
       ED_DADOS: /app/data
       SSO_SECRET: ${SSO_SECRET:-dda44fc86d93b0f196a4ad1612a17e9cfd451e3f29f9e25ad3bec3fab02030df82765460ededd62e84ff65d54f179d94}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador do Sistema}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@spd.local}
+      ADMIN_USER: ${ADMIN_SIAPE:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
     volumes:
       - ed_data:/app/data
     networks:
@@ -156,6 +161,10 @@ services:
       DB_PASSWORD: ${ETS_DB_PASSWORD:-etspassword}
       SESSION_DRIVER: file
       CACHE_STORE: file
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador do Sistema}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@spd.local}
+      ADMIN_USER: ${ADMIN_SIAPE:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
     volumes:
       - ets_storage:/var/www/html/storage
     networks:
